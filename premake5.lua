@@ -260,6 +260,40 @@ local x64_deps_overlay_include = {
     path.join(deps_dir, "ingame_overlay/deps/mini_detour/install64/include"),
 }
 
+local arm64ec_deps_include = {
+    path.join(deps_dir, "libssq/include"),
+    path.join(deps_dir, "curl/installarm64ec/include"),
+    path.join(deps_dir, "protobuf/installarm64ec/include"),
+    path.join(deps_dir, "zlib/installarm64ec/include"),
+    path.join(deps_dir, "mbedtls/installarm64ec/include"),
+    path.join(deps_dir, "opus/installarm64ec/include"),
+    path.join(deps_dir, "portaudio/installarm64ec/include"),
+    path.join(deps_dir, "sdl/installarm64ec/include"),
+}
+
+local arm64ec_deps_overlay_include = {
+    path.join(deps_dir, "ingame_overlay/installarm64ec/include"),
+    path.join(deps_dir, "ingame_overlay/deps/System/installarm64ec/include"),
+    path.join(deps_dir, "ingame_overlay/deps/mini_detour/installarm64ec/include"),
+}
+
+local arm64_deps_include = {
+    path.join(deps_dir, "libssq/include"),
+    path.join(deps_dir, "curl/installarm64/include"),
+    path.join(deps_dir, "protobuf/installarm64/include"),
+    path.join(deps_dir, "zlib/installarm64/include"),
+    path.join(deps_dir, "mbedtls/installarm64/include"),
+    path.join(deps_dir, "opus/installarm64/include"),
+    path.join(deps_dir, "portaudio/installarm64/include"),
+    path.join(deps_dir, "sdl/installarm64/include"),
+}
+
+local arm64_deps_overlay_include = {
+    path.join(deps_dir, "ingame_overlay/installarm64/include"),
+    path.join(deps_dir, "ingame_overlay/deps/System/installarm64/include"),
+    path.join(deps_dir, "ingame_overlay/deps/mini_detour/installarm64/include"),
+}
+
 
 -- source & header files
 ---------
@@ -456,6 +490,42 @@ local overlay_link = {
 local x32_ssq_libdir = path.join(deps_dir, "libssq/build32")
 local x64_ssq_libdir = path.join(deps_dir, "libssq/build64")
 
+local arm64ec_ssq_libdir = path.join(deps_dir, "libssq/buildarm64ec")
+local arm64ec_deps_libdir = {
+    arm64ec_ssq_libdir,
+    path.join(deps_dir, "curl/installarm64ec/lib"),
+    path.join(deps_dir, "protobuf/installarm64ec/lib"),
+    path.join(deps_dir, "zlib/installarm64ec/lib"),
+    path.join(deps_dir, "mbedtls/installarm64ec/lib"),
+    path.join(deps_dir, "opus/installarm64ec/lib"),
+    path.join(deps_dir, "portaudio/installarm64ec/lib"),
+    path.join(deps_dir, "sdl/installarm64ec/lib"),
+}
+
+local arm64ec_deps_overlay_libdir = {
+    path.join(deps_dir, "ingame_overlay/installarm64ec/lib"),
+    path.join(deps_dir, "ingame_overlay/deps/System/installarm64ec/lib"),
+    path.join(deps_dir, "ingame_overlay/deps/mini_detour/installarm64ec/lib"),
+}
+
+local arm64_ssq_libdir = path.join(deps_dir, "libssq/buildarm64")
+local arm64_deps_libdir = {
+    arm64_ssq_libdir,
+    path.join(deps_dir, "curl/installarm64/lib"),
+    path.join(deps_dir, "protobuf/installarm64/lib"),
+    path.join(deps_dir, "zlib/installarm64/lib"),
+    path.join(deps_dir, "mbedtls/installarm64/lib"),
+    path.join(deps_dir, "opus/installarm64/lib"),
+    path.join(deps_dir, "portaudio/installarm64/lib"),
+    path.join(deps_dir, "sdl/installarm64/lib"),
+}
+
+local arm64_deps_overlay_libdir = {
+    path.join(deps_dir, "ingame_overlay/installarm64/lib"),
+    path.join(deps_dir, "ingame_overlay/deps/System/installarm64/lib"),
+    path.join(deps_dir, "ingame_overlay/deps/mini_detour/installarm64/lib"),
+}
+
 local cmake_generator = os.getenv("CMAKE_GENERATOR") or ""
 if cmake_generator == "" and os.host() == 'windows' or cmake_generator:find("Visual Studio") then
     x32_ssq_libdir = x32_ssq_libdir .. "/Release"
@@ -528,7 +598,15 @@ end
 
 filter {} -- reset the filter and remove all active keywords
 configurations { "debug", "release", }
-platforms { "x64", "x86", }
+
+if os.target() == "windows" then
+    platforms { "x64", "x86", "arm64ec", }
+elseif os.target() == "linux" then
+    platforms { "x64", "x86", "arm64", }
+else
+    platforms { "x64", "x86", }
+end
+
 language "C++"
 cppdialect "C++17"
 cdialect "C17"
@@ -575,6 +653,10 @@ filter { "platforms:x86", }
     architecture "x86" 
 filter { "platforms:x64", }
     architecture "x86_64"
+filter { "platforms:arm64ec", }
+    architecture "arm64ec"
+filter { "platforms:arm64", }
+    architecture "arm64"
 filter {} -- reset the filter and remove all active keywords
 
 
@@ -762,6 +844,8 @@ project "api_regular"
         targetname "steam_api"
     filter { "system:windows", "platforms:x64", }
         targetname "steam_api64"
+    filter { "system:windows", "platforms:arm64ec", }
+        targetname "steam_api64"
     filter { "system:not windows", }
         targetname "libsteam_api"
 
@@ -776,6 +860,18 @@ project "api_regular"
     filter { "platforms:x64", }
         includedirs {
             x64_deps_include,
+        }
+
+    -- arm64ec include dir
+    filter { "platforms:arm64ec", }
+        includedirs {
+            arm64ec_deps_include,
+        }
+
+    -- arm64 include dir
+    filter { "platforms:arm64", }
+        includedirs {
+            arm64_deps_include,
         }
 
 
@@ -832,6 +928,16 @@ project "api_regular"
         libdirs {
             x64_deps_libdir,
         }
+    -- arm64ec libs search dir
+    filter { "platforms:arm64ec", }
+        libdirs {
+            arm64ec_deps_libdir,
+        }
+    -- arm64 libs search dir
+    filter { "platforms:arm64", }
+        libdirs {
+            arm64_deps_libdir,
+        }
 -- End api_regular
 
 
@@ -849,6 +955,10 @@ project "api_experimental"
         targetname "steam_api"
     filter { "system:windows", "platforms:x64", }
         targetname "steam_api64"
+    filter { "system:windows", "platforms:arm64ec", }
+        targetname "steam_api64"
+    filter { "system:not windows", "platforms:arm64", }
+        targetname "libsteam_api_arm64"
     filter { "system:not windows", }
         targetname "libsteam_api"
 
@@ -1179,6 +1289,16 @@ project "tool_lobby_connect"
     filter { "platforms:x64", }
         libdirs {
             x64_deps_libdir,
+        }
+    -- arm64ec libs search dir
+    filter { "platforms:arm64ec", }
+        libdirs {
+            arm64ec_deps_libdir,
+        }
+    -- arm64 libs search dir
+    filter { "platforms:arm64", }
+        libdirs {
+            arm64_deps_libdir,
         }
 -- End tool_lobby_connect
 
@@ -1605,6 +1725,16 @@ project "steamclient_regular"
     filter { "platforms:x64", }
         libdirs {
             x64_deps_libdir,
+        }
+    -- arm64ec libs search dir
+    filter { "platforms:arm64ec", }
+        libdirs {
+            arm64ec_deps_libdir,
+        }
+    -- arm64 libs search dir
+    filter { "platforms:arm64", }
+        libdirs {
+            arm64_deps_libdir,
         }
 -- End steamclient_regular
 
