@@ -1026,6 +1026,11 @@ project "api_experimental"
         files {
             "resources/win/api/64/resources.rc"
         }
+    -- Windows arm64ec common source files
+    filter { "system:windows", "platforms:arm64ec", "options:winrsrc", }
+        files {
+            "resources/win/api/64/resources.rc"
+        }
     -- Linux common source files
     filter { "system:not windows", }
         removefiles {
