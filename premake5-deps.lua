@@ -141,6 +141,18 @@ newoption {
 
 newoption {
     category = "build",
+    trigger = "arm64ec-build",
+    description = "Build for ARM64EC arch (Windows only)",
+}
+
+newoption {
+    category = "build",
+    trigger = "arm64-build",
+    description = "Build for ARM64 arch (Linux only)",
+}
+
+newoption {
+    category = "build",
     trigger = "build-ssq",
     description = "Build ssq",
 }
@@ -260,11 +272,15 @@ local cmake_common_defs = {
 }
 
 
-local function cmake_build(dep_folder, is_32, extra_cmd_defs, c_flags_init, cxx_flags_init)
+local function cmake_build(dep_folder, is_32, is_arm64ec, is_arm64, extra_cmd_defs, c_flags_init, cxx_flags_init)
     local dep_base = path.getabsolute(path.join(deps_dir, dep_folder))
     local arch_iden = ''
     if is_32 then
         arch_iden = '32'
+    elseif is_arm64ec then
+        arch_iden = 'arm64ec'
+    elseif is_arm64 then
+        arch_iden = 'arm64'
     else
         arch_iden = '64'
     end
@@ -298,6 +314,8 @@ local function cmake_build(dep_folder, is_32, extra_cmd_defs, c_flags_init, cxx_
         if is_32 then
             table.insert(all_cflags_init, '-m32')
             table.insert(all_cxxflags_init, '-m32')
+        elseif is_arm64 then
+            -- nothing
         end
     elseif string.match(_ACTION, 'vs.+') then
         -- these 2 are needed because mbedtls doesn't care about 'CMAKE_MSVC_RUNTIME_LIBRARY' for some reason
@@ -311,6 +329,8 @@ local function cmake_build(dep_folder, is_32, extra_cmd_defs, c_flags_init, cxx_
         if cmake_generator == "" and os.host() == 'windows' or cmake_generator:find("Visual Studio") then
             if is_32 then
                 cmd_gen = cmd_gen .. ' -A Win32'
+            elseif is_arm64ec then
+                cmd_gen = cmd_gen .. ' -A arm64ec'
             else
                 cmd_gen = cmd_gen .. ' -A x64'
             end
@@ -540,10 +560,16 @@ end
 -------
 if _OPTIONS["build-ssq"] or _OPTIONS["all-build"] then
     if _OPTIONS["32-build"] then
-        cmake_build('libssq', true)
+        cmake_build('libssq', true, false, false)
     end
     if _OPTIONS["64-build"] then
-        cmake_build('libssq', false)
+        cmake_build('libssq', false, false, false)
+    end
+    if _OPTIONS["arm64ec-build"] then
+        cmake_build('libssq', false, true, false)
+    end
+    if _OPTIONS["arm64-build"] then
+        cmake_build('libssq', false, false, true)
     end
 end
 if _OPTIONS["build-zlib"] or _OPTIONS["all-build"] then
@@ -633,6 +659,22 @@ local wild_zlib_64 = {
     'ZLIB_ROOT="' .. path.join(deps_dir, 'zlib', 'install64') .. '"',
     'ZLIB_INCLUDE_DIR="' .. path.join(deps_dir, 'zlib', 'install64', 'include') .. '"',
     'ZLIB_LIBRARY="' .. wild_zlib_path_64 .. '"',
+}
+
+local wild_zlib_path_arm64ec = path.join(deps_dir, 'zlib', 'installarm64ec', 'lib', zlib_name)
+local wild_zlib_arm64ec = {
+    'ZLIB_USE_STATIC_LIBS=ON',
+    'ZLIB_ROOT="' .. path.join(deps_dir, 'zlib', 'installarm64ec') .. '"',
+    'ZLIB_INCLUDE_DIR="' .. path.join(deps_dir, 'zlib', 'installarm64ec', 'include') .. '"',
+    'ZLIB_LIBRARY="' .. wild_zlib_path_arm64ec .. '"',
+}
+
+local wild_zlib_path_arm64 = path.join(deps_dir, 'zlib', 'installarm64', 'lib', zlib_name)
+local wild_zlib_arm64 = {
+    'ZLIB_USE_STATIC_LIBS=ON',
+    'ZLIB_ROOT="' .. path.join(deps_dir, 'zlib', 'installarm64') .. '"',
+    'ZLIB_INCLUDE_DIR="' .. path.join(deps_dir, 'zlib', 'installarm64', 'include') .. '"',
+    'ZLIB_LIBRARY="' .. wild_zlib_path_arm64 .. '"',
 }
 
 if _OPTIONS["build-mbedtls"] or _OPTIONS["all-build"] then
