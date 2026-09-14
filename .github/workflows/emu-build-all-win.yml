@@ -52,12 +52,14 @@ jobs:
             "tool_lobby_connect",
             "tool_generate_interfaces",
           ]
-        arch: ["x64", "Win32"]
+        arch: ["x64", "Win32", "arm64ec"]
         cfg: ["debug", "release"]
 
         exclude:
           - prj: lib_steam_old
             arch: x64
+          - prj: lib_steam_old
+            arch: arm64ec
 
     steps:
       # clone branch
